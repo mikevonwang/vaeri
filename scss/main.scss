@@ -1,0 +1,13 @@
+/*
+
+- - -   V A E R I   - - -
+
+This file contains SCSS global rules.
+
+*/
+
+
+div, header, footer, main, section, aside {
+  display: flex;
+  flex-shrink: 0;
+}
