@@ -1,0 +1,2 @@
+# vaeri
+lightweight web framework
