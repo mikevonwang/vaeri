@@ -16,7 +16,7 @@ class Vaeri {
             mapped_dom[c] = document.querySelector(user_dom[c]);
           }
           else {
-            mapped_dom[c] = new VaeriElementArray(c, user_dom[c], document.querySelectorAll(user_dom[c]));
+            mapped_dom[c] = new VaeriElementArray(this, c, user_dom[c], document.querySelectorAll(user_dom[c]));
           }
         });
         this.dom = mapped_dom;
@@ -25,12 +25,21 @@ class Vaeri {
       if (this.setListeners) {
         const listeners = this.setListeners();
         Object.keys(listeners).forEach((c) => {
-          this.dom[c].listen(listeners[c]);
-          this.dom[c].forEach((d,i) => {
-            listeners[c].forEach((l) => {
-              d.addEventListener(listeners[c][l][0], listeners[c][l][1].bind(this,d,i));
-            });
-          });
+          if (this.dom[c]) {
+            if (this.dom[c].length === undefined) {
+              listeners[c].forEach((l) => {
+                this.dom[c].addEventListener(l[0], l[1].bind(this,this.dom[c],undefined));
+              });
+            }
+            else {
+              this.dom[c].listen(listeners[c]);
+              this.dom[c].forEach((d,i) => {
+                listeners[c].forEach((l) => {
+                  d.addEventListener(l[0], l[1].bind(this,d,i));
+                });
+              });
+            }
+          }
         });
       }
 
@@ -55,7 +64,7 @@ class Vaeri {
 
 }
 
-function VaeriElementArray(key, selector, elements) {
+function VaeriElementArray(self, key, selector, elements) {
   elements.forEach((c) => {
     this.push(c);
   });
@@ -71,7 +80,7 @@ function VaeriElementArray(key, selector, elements) {
     document.querySelectorAll(this.selector).forEach((c,i) => {
       this.push(c);
       this.listeners.forEach((l) => {
-        c.addEventListener(l[0], l[1].bind(this,c,i));
+        c.addEventListener(l[0], l[1].bind(self,c,i));
       });
     });
   };

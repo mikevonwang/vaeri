@@ -10,16 +10,22 @@ class App extends Vaeri {
   getDOM() {
     return ({
       main: 'main',
-      cards: ['div.card'],
       list: 'ul.list',
       list_items: ['ul.list > li'],
-      list_share_buttons: ['ul.list > li button.share'],
+      list_edit_buttons: ['ul.list > li button.edit'],
+      modal: 'div.modal',
+      modal_close: 'div.modal button.modal-close',
+      modal_save: 'div.modal button.modal-save',
+      modal_input_name: 'div.modal input#modal-name',
+      modal_input_phone: 'div.modal input#modal-phone',
     });
   }
 
   setListeners() {
     return ({
-      list_share_buttons: [['click', this.lstrListShareButtons]],
+      list_edit_buttons: [['click', this.lstrListEditButtons]],
+      modal_close: [['click', this.lstrModalClose]],
+      modal_save: [['click', this.lstrModalSave]],
     });
   }
 
@@ -75,15 +81,25 @@ class App extends Vaeri {
     new_state.data.forEach((c,i) => {
       new_list_items += '<li>';
       new_list_items += '<p class="name">' + c.name + '</p><p class="phone">' + c.phone + '</p>'
-      new_list_items += '<button class="share">SHARE</button>';
+      new_list_items += '<button class="edit">EDIT</button>';
       new_list_items += '</li>';
     });
     this.dom.list.insertAdjacentHTML('beforeEnd', new_list_items);
-    this.dom.list_share_buttons.populate();
+    this.dom.list_edit_buttons.populate();
   }
 
-  lstrListShareButtons(item, index) {
-    console.log(index);
+  lstrListEditButtons(item, index) {
+    this.dom.modal.classList.add('visible');
+    this.dom.modal_input_name.value = this.state.data[index].name;
+    this.dom.modal_input_phone.value = this.state.data[index].phone;
+  }
+
+  lstrModalClose(item) {
+    this.dom.modal.classList.remove('visible');
+  }
+
+  lstrModalSave(item) {
+    this.dom.modal.classList.remove('visible');
   }
 
 }

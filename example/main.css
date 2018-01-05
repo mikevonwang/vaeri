@@ -16,3 +16,28 @@ li button {
   height: 30px;
   cursor: pointer;
 }
+
+div.modal {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.8);
+}
+
+div.modal.visible {
+  display: flex;
+}
+
+div.modal-body {
+  width: 400px;
+  height: 400px;
+  background-color: #fff;
+  border-radius: 2px;
+  box-shadow: 0 2px 6px 0 rgba(0,0,0,0.3);
+}
