@@ -1,0 +1,18 @@
+li {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+li p.name {
+  width: 150px;
+}
+
+li p.phone {
+  width: 150px;
+}
+
+li button {
+  width: 60px;
+  height: 30px;
+  cursor: pointer;
+}
