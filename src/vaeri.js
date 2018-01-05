@@ -57,7 +57,9 @@ class Vaeri {
   setState(new_state_items) {
     const new_state = Object.assign({}, this.state, new_state_items);
     Object.keys(new_state_items).forEach((c) => {
-      this.controllers[c].call(this, this.state, new_state);
+      if (this.controllers[c]) {
+        this.controllers[c].call(this, this.state, new_state);
+      }
     });
     this.state = new_state;
   }
@@ -79,9 +81,11 @@ function VaeriElementArray(self, key, selector, elements) {
     this.length = 0;
     document.querySelectorAll(this.selector).forEach((c,i) => {
       this.push(c);
-      this.listeners.forEach((l) => {
-        c.addEventListener(l[0], l[1].bind(self,c,i));
-      });
+      if (this.listeners) {
+        this.listeners.forEach((l) => {
+          c.addEventListener(l[0], l[1].bind(self,c,i));
+        });
+      }
     });
   };
 }
