@@ -16,14 +16,26 @@ class Vaeri {
             mapped_dom[c] = document.querySelector(user_dom[c]);
           }
           else {
-            mapped_dom[c] = Array.prototype.slice.call(document.querySelectorAll(user_dom[c]));
+            mapped_dom[c] = new VaeriElementArray(c, user_dom[c], document.querySelectorAll(user_dom[c]));
           }
         });
         this.dom = mapped_dom;
       }
 
+      if (this.setListeners) {
+        const listeners = this.setListeners();
+        Object.keys(listeners).forEach((c) => {
+          this.dom[c].listen(listeners[c]);
+          this.dom[c].forEach((d,i) => {
+            listeners[c].forEach((l) => {
+              d.addEventListener(listeners[c][l][0], listeners[c][l][1].bind(this,d,i));
+            });
+          });
+        });
+      }
+
       if (this.setControllers) {
-        this.controllers = Object.assign({}, this.setControllers());
+        this.controllers = this.setControllers();
       }
 
       if (this.onMount) {
@@ -41,8 +53,27 @@ class Vaeri {
     this.state = new_state;
   }
 
-  populate(parent, html) {
-    parent.insertAdjacentHTML('beforeEnd', html);
-  }
-
 }
+
+function VaeriElementArray(key, selector, elements) {
+  elements.forEach((c) => {
+    this.push(c);
+  });
+  this.key = key;
+  this.selector = selector;
+
+  this.listen = (x) => {
+    this.listeners = x;
+  };
+
+  this.populate = () => {
+    this.length = 0;
+    document.querySelectorAll(this.selector).forEach((c,i) => {
+      this.push(c);
+      this.listeners.forEach((l) => {
+        c.addEventListener(l[0], l[1].bind(this,c,i));
+      });
+    });
+  };
+}
+VaeriElementArray.prototype = Array.prototype;
