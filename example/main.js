@@ -4,6 +4,7 @@ class App extends Vaeri {
     super();
     this.state = {
       data: [],
+      editing_index: null,
     };
   }
 
@@ -12,6 +13,7 @@ class App extends Vaeri {
       main: 'main',
       list: 'ul.list',
       list_items: ['ul.list > li'],
+      list_items_content: ['ul.list > li div.content'],
       list_edit_buttons: ['ul.list > li button.edit'],
       modal: 'div.modal',
       modal_close: 'div.modal button.modal-close',
@@ -80,11 +82,14 @@ class App extends Vaeri {
     let new_list_items = '';
     new_state.data.forEach((c,i) => {
       new_list_items += '<li>';
-      new_list_items += '<p class="name">' + c.name + '</p><p class="phone">' + c.phone + '</p>'
+      new_list_items += '<div class="content">';
+      new_list_items += '<p class="name">' + c.name + '</p><p class="phone">' + c.phone + '</p>';
+      new_list_items += '</div>'
       new_list_items += '<button class="edit">EDIT</button>';
       new_list_items += '</li>';
     });
     this.dom.list.insertAdjacentHTML('beforeEnd', new_list_items);
+    this.dom.list_items_content.populate();
     this.dom.list_edit_buttons.populate();
   }
 
@@ -92,6 +97,9 @@ class App extends Vaeri {
     this.dom.modal.classList.add('visible');
     this.dom.modal_input_name.value = this.state.data[index].name;
     this.dom.modal_input_phone.value = this.state.data[index].phone;
+    this.setState({
+      editing_index: index,
+    });
   }
 
   lstrModalClose(item) {
@@ -100,6 +108,24 @@ class App extends Vaeri {
 
   lstrModalSave(item) {
     this.dom.modal.classList.remove('visible');
+    let name = this.dom.modal_input_name.value;
+    let phone = this.dom.modal_input_phone.value;
+    let new_list_item_content = '<p class="name">' + name + '</p><p class="phone">' + phone + '</p>';
+    this.dom.list_items_content[this.state.editing_index].innerHTML = new_list_item_content;
+    this.setState({
+      data: this.state.data.map((c,i) => {
+        if (i === this.state.editing_index) {
+          return ({
+            name: name,
+            phone: phone,
+          });
+        }
+        else {
+          return c;
+        }
+      }),
+      editing_index: null,
+    });
   }
 
 }
