@@ -25,15 +25,18 @@ class App extends Vaeri {
 
   setListeners() {
     return ({
-      list_edit_buttons: [['click', this.lstrListEditButtons]],
-      modal_close: [['click', this.lstrModalClose]],
-      modal_save: [['click', this.lstrModalSave]],
+      list_edit_buttons: [['click', this.onClickListEditButton]],
+      modal_close: [['click', this.onClickModalClose]],
+      modal_save: [['click', this.onClickModalSave]],
     });
   }
 
-  setControllers() {
+  setActions() {
     return ({
-      data: this.ctlrData,
+      didReceiveData: this.didReceiveData,
+      didClickListEditButton: this.didClickListEditButton,
+      didClickModalClose: this.didClickModalClose,
+      didClickModalSave: this.didClickModalSave,
     });
   }
 
@@ -73,12 +76,12 @@ class App extends Vaeri {
         phone: phone,
       });
     }
-    this.setState({
+    this.doAction('didReceiveData', {
       data: data,
     });
   }
 
-  ctlrData(prev_state, new_state) {
+  didReceiveData(prev_state, new_state) {
     let new_list_items = '';
     new_state.data.forEach((c,i) => {
       new_list_items += '<li>';
@@ -93,26 +96,32 @@ class App extends Vaeri {
     this.dom.list_edit_buttons.populate();
   }
 
-  lstrListEditButtons(item, index) {
+  didClickListEditButton(prev_state, new_state) {
+    this.dom.modal_input_name.value  = new_state.data[new_state.editing_index].name;
+    this.dom.modal_input_phone.value = new_state.data[new_state.editing_index].phone;
     this.dom.modal.classList.add('visible');
-    this.dom.modal_input_name.value = this.state.data[index].name;
-    this.dom.modal_input_phone.value = this.state.data[index].phone;
-    this.setState({
+  }
+
+  onClickListEditButton(item, index) {
+    this.doAction('didClickListEditButton', {
       editing_index: index,
     });
   }
 
-  lstrModalClose(item) {
+  onClickModalClose(item) {
+    this.doAction('didClickModalClose', {
+      editing_index: null,
+    });
+  }
+
+  didClickModalClose(prev_state, new_state) {
     this.dom.modal.classList.remove('visible');
   }
 
-  lstrModalSave(item) {
-    this.dom.modal.classList.remove('visible');
+  onClickModalSave(item) {
     let name = this.dom.modal_input_name.value;
     let phone = this.dom.modal_input_phone.value;
-    let new_list_item_content = '<p class="name">' + name + '</p><p class="phone">' + phone + '</p>';
-    this.dom.list_items_content[this.state.editing_index].innerHTML = new_list_item_content;
-    this.setState({
+    this.doAction('didClickModalSave', {
       data: this.state.data.map((c,i) => {
         if (i === this.state.editing_index) {
           return ({
@@ -126,6 +135,12 @@ class App extends Vaeri {
       }),
       editing_index: null,
     });
+  }
+
+  didClickModalSave(prev_state, new_state) {
+    let new_list_item_content = '<p class="name">' + new_state.data[prev_state.editing_index].name + '</p><p class="phone">' + new_state.data[prev_state.editing_index].phone + '</p>';
+    this.dom.list_items_content[this.state.editing_index].innerHTML = new_list_item_content;
+    this.dom.modal.classList.remove('visible');
   }
 
 }

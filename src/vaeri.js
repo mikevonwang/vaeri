@@ -1,7 +1,7 @@
 class Vaeri {
   constructor() {
     this.state = {};
-    this.controllers = {};
+    this.actions = {};
     this.dom = {};
   }
 
@@ -43,8 +43,8 @@ class Vaeri {
         });
       }
 
-      if (this.setControllers) {
-        this.controllers = this.setControllers();
+      if (this.setActions) {
+        this.actions = this.setActions();
       }
 
       if (this.onMount) {
@@ -54,13 +54,11 @@ class Vaeri {
     });
   }
 
-  setState(new_state_items) {
+  doAction(action_name, new_state_items) {
     const new_state = Object.assign({}, this.state, new_state_items);
-    Object.keys(new_state_items).forEach((c) => {
-      if (this.controllers[c]) {
-        this.controllers[c].call(this, this.state, new_state);
-      }
-    });
+    if (this.actions[action_name]) {
+      this.actions[action_name].call(this, this.state, new_state);
+    }
     this.state = new_state;
   }
 
