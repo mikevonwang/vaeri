@@ -70,9 +70,14 @@ function VaeriElementArray(self, key, selector, elements) {
   });
   this.key = key;
   this.selector = selector;
+  this.listeners = null;
+  this.bound_listeners = null;
 
   this.listen = (x) => {
     this.listeners = x;
+    this.bound_listeners = this.listeners.map((c) => {
+      return ([]);
+    });
   };
 
   this.populate = () => {
@@ -80,8 +85,32 @@ function VaeriElementArray(self, key, selector, elements) {
     document.querySelectorAll(this.selector).forEach((c,i) => {
       this.push(c);
       if (this.listeners) {
-        this.listeners.forEach((l) => {
-          c.addEventListener(l[0], l[1].bind(self,c,i));
+        this.bound_listeners[i] = [];
+        this.listeners.forEach((l,j) => {
+          this.bound_listeners[i][j] = l[1].bind(self,c,i);
+          c.addEventListener(l[0], this.bound_listeners[i][j]);
+        });
+      }
+    });
+  };
+
+  this.delete = (deleting_index) => {
+    this.forEach((c,i) => {
+      if (this.listeners) {
+        this.listeners.forEach((l,j) => {
+          c.removeEventListener(l[0], this.bound_listeners[i][j]);
+        });
+      }
+    });
+    this.splice(deleting_index, 1);
+    if (this.listeners) {
+      this.bound_listeners.splice(deleting_index, 1);
+    }
+    this.forEach((c,i) => {
+      if (this.listeners) {
+        this.listeners.forEach((l,j) => {
+          this.bound_listeners[i][j] = l[1].bind(self,c,i);
+          c.addEventListener(l[0], this.bound_listeners[i][j]);
         });
       }
     });

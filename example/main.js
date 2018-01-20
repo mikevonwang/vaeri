@@ -15,6 +15,7 @@ class App extends Vaeri {
       list_items: ['ul.list > li'],
       list_items_content: ['ul.list > li div.content'],
       list_edit_buttons: ['ul.list > li button.edit'],
+      list_delete_buttons: ['ul.list > li button.delete'],
       modal: 'div.modal',
       modal_close: 'div.modal button.modal-close',
       modal_save: 'div.modal button.modal-save',
@@ -26,6 +27,7 @@ class App extends Vaeri {
   setListeners() {
     return ({
       list_edit_buttons: [['click', this.onClickListEditButton]],
+      list_delete_buttons: [['click', this.onClickListDeleteButton]],
       modal_close: [['click', this.onClickModalClose]],
       modal_save: [['click', this.onClickModalSave]],
     });
@@ -35,6 +37,7 @@ class App extends Vaeri {
     return ({
       didReceiveData: this.didReceiveData,
       didClickListEditButton: this.didClickListEditButton,
+      didClickListDeleteButton: this.didClickListDeleteButton,
       didClickModalClose: this.didClickModalClose,
       didClickModalSave: this.didClickModalSave,
     });
@@ -72,6 +75,7 @@ class App extends Vaeri {
       phone += Math.floor(Math.random() * 10);
       phone += Math.floor(Math.random() * 10);
       data.push({
+        id: i,
         name: name,
         phone: phone,
       });
@@ -89,11 +93,20 @@ class App extends Vaeri {
       new_list_items += '<p class="name">' + c.name + '</p><p class="phone">' + c.phone + '</p>';
       new_list_items += '</div>'
       new_list_items += '<button class="edit">EDIT</button>';
+      new_list_items += '<button class="delete">DELETE</button>';
       new_list_items += '</li>';
     });
     this.dom.list.insertAdjacentHTML('beforeEnd', new_list_items);
+    this.dom.list_items.populate();
     this.dom.list_items_content.populate();
     this.dom.list_edit_buttons.populate();
+    this.dom.list_delete_buttons.populate();
+  }
+
+  onClickListEditButton(item, index) {
+    this.doAction('didClickListEditButton', {
+      editing_index: index,
+    });
   }
 
   didClickListEditButton(prev_state, new_state) {
@@ -102,10 +115,25 @@ class App extends Vaeri {
     this.dom.modal.classList.add('visible');
   }
 
-  onClickListEditButton(item, index) {
-    this.doAction('didClickListEditButton', {
-      editing_index: index,
+  onClickListDeleteButton(item, index) {
+    this.doAction('didClickListDeleteButton', {
+      data: this.state.data.filter((c,i) => {
+        return (i !== index);
+      }),
     });
+  }
+
+  didClickListDeleteButton(prev_state, new_state) {
+    let deleting_index = prev_state.data.findIndex((c) => {
+      return (new_state.data.findIndex((d) => {
+        return (d.id === c.id);
+      }) === -1);
+    });
+    this.dom.list.removeChild(this.dom.list_items[deleting_index]);
+    this.dom.list_items.delete(deleting_index);
+    this.dom.list_items_content.delete(deleting_index);
+    this.dom.list_edit_buttons.delete(deleting_index);
+    this.dom.list_delete_buttons.delete(deleting_index);
   }
 
   onClickModalClose(item) {
@@ -124,7 +152,7 @@ class App extends Vaeri {
     this.doAction('didClickModalSave', {
       data: this.state.data.map((c,i) => {
         if (i === this.state.editing_index) {
-          return ({
+          return Object.assign({}, c, {
             name: name,
             phone: phone,
           });
