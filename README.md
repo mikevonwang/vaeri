@@ -35,7 +35,7 @@ class App extends Vaeri {
 };
 ```
 
-`super()` performs behind-the-scenes initializations for your app. You can also initialize your `state` object here.
+`super()` performs behind-the-scenes initializations for your app. You can also initialize your app's `state` object here.
 
 Once you have your app declared and initialized, you can `start` it:
 
@@ -82,6 +82,7 @@ The values can be either any valid CSS selector `String`, or a one-element `Arra
 
 In the example above, the `list` value is a `String`, so Vaeri will look for a single `<ul>` element with a class of `shopping_list`. If it finds multiple, only the first will be paid attention to. Conversely, the `list_items` value is an `Array`, so Vaeri will look for all `<li>` elements whose immediate parent is a `<ul>` with a class of `shopping_list`.
 
+The DOM elements matched by this function are available in the app under `this.dom`.
 
 ### Attaching listeners
 
@@ -117,16 +118,16 @@ class App extends Vaeri {
 (new App()).start();
 ```
 
-Your `setListeners()` function, like your `getDOM()` function, must return an object. Each key in this object must also be a key in the object returned by `getDOM()`; this tells Vaeri which listeners to attach to which DOM elements.
+Listeners are declared with the `setListeners()` function. This function, like your `getDOM()` function, must return an object. Each key in this object must also be a key in the object returned by `getDOM()`; this tells Vaeri which listeners to attach to which DOM elements.
 
 Each value in this object is an `Array` of **Listener Definition** `Array`s. Each **Listener Definition** `Array` corresponds to a single event listener, and has two elements. The first is the name of the event the listener should listen for. The second is the name of the function that should run when the event is heard, i.e. the **Listener** function.
 
-In the example above, each `list_item` DOM element will receive a listener for the `click` event. Each time such an event is heard, the `onClickListItem()` event is called.
-
 Each **Listener** function takes two arguments:
 
-* `item` is the DOM element that heard the event
+* `item` is the DOM element that heard the event.
 * `index` is the index of that DOM element in its parent `Array`. If the DOM element is a singleton, this will be `undefined`.
+
+In the example above, each `dom.list_item` DOM element will receive a listener for the `click` event. Each time such an event is heard, the `onClickListItem()` event is called.
 
 ### Defining actions
 
@@ -175,7 +176,11 @@ class App extends Vaeri {
   }
 
   didClickListItem(prev_state, new_state) {
-
+    new_state.items.forEach((c,i) => {
+      if (prev_state.items[i].in_cart !== new_state.items[i].in_cart) {
+        this.dom.list_items[i].classList.toggle('in_cart');
+      }
+    });
   }
 
 };
@@ -183,9 +188,23 @@ class App extends Vaeri {
 (new App()).start();
 ```
 
-### Defining startup
+**Action** functions are called with `doAction()`. This function takes two arguments:
 
-Some code should run whenever your webapp has finished loading:
+* `action_name` is the name of the **Action** function you wish to call.
+* `state_updates` is an object containing any updated properties for your app's `state`. Do not mutate `state` properties directly; use functions like `Array.map()` and `Object.assign()`.
+
+**Action** functions are declared with the `setActions()` function. This function must return an object. Each key must be the name of an **Action** function, and each value must be an **Action** function.
+
+Each **Action** function takes two arguments:
+
+* `prev_state` is your app's state before the **Action** was called.
+* `new_state` is your app's state after the **Action** was called, i.e. the current state.
+
+In the example above, in `onClickListItem()`, the `didClickListItem()` **Action** function is called. The `state` is also updated to that the `state.item` whose corresponding `dom.list_item` was clicked has its `in_cart` (a Boolean value) set to the opposite of what it was. The `didClickListItem()` function then toggles the `in_cart` class on every `dom.list_item` whose corresponding `state.item` had its `in_cart` property changed.
+
+### Defining startup behavior
+
+Most apps have some code that should run when the app has finished mounting. In Vaeri, this code is called in `onMount()`:
 
 ```javascript
 class App extends Vaeri {
@@ -251,10 +270,18 @@ class App extends Vaeri {
   }
 
   didClickListItem(prev_state, new_state) {
-
+    new_state.items.forEach((c,i) => {
+      if (prev_state.items[i].in_cart !== new_state.items[i].in_cart) {
+        this.dom.list_items[i].classList.toggle('in_cart');
+      }
+    });
   }
 
 };
 
 (new App()).start();
 ```
+
+Any XHR calls that get data from an API should go in `onMount()`.
+
+In the example above, an API call is made with an imaginary `xhr()` function to an imaginary endpoint. Upon receiving a `result`, the `didReceiveData()` **Action** function is called, which assembles the HTML for the items and inserts it in the DOM. Upon insertion of the new DOM elements, `populate()` is called on `dom.list_items`, to tell Vaeri that this DOM element `Array` now has new members.
