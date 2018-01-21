@@ -18,7 +18,6 @@ gulp.task('js', () => {
   .pipe(rename('vaeri.min.js'))
   .pipe(sourcemaps.write('./'))
   .pipe(gulp.dest('dist'))
-  .pipe(gulp.dest('example'))
 });
 
 gulp.task('watch', () => {
