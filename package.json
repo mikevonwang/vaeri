@@ -2,7 +2,7 @@
   "name": "vaeri",
   "version": "0.0.1",
   "description": "A lightweight Javascript framework",
-  "main": "src/vaeri.js",
+  "main": "dist/vaeri.min.js",
   "dependencies": {},
   "devDependencies": {
     "babel-core": "^6.26.0",
