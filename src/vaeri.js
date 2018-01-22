@@ -49,10 +49,10 @@ class Vaeri {
     });
   }
 
-  doAction(action_name, new_state_items, additional_parameters = []) {
-    this.state = Object.assign({}, this.state, new_state_items);
+  doAction(action_name, state_updates, action_parameters = []) {
+    this.state = Object.assign({}, this.state, state_updates);
     if (this[action_name]) {
-      this[action_name].call(this, ...additional_parameters);
+      this[action_name].call(this, ...action_parameters);
     }
   }
 

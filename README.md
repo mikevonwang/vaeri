@@ -154,14 +154,8 @@ class App extends Vaeri {
     });
   }
 
-  setActions() {
-    return ({
-      didClickListItem: this.didClickListItem,
-    });
-  }
-
   onClickListItem(item, index) {
-    this.doAction('didClickListItem', {
+    const NSI = {
       items: this.state.items.map((c,i) => {
         if (i === index) {
           return Object.assign({}, c, {
@@ -171,16 +165,13 @@ class App extends Vaeri {
         else {
           return c;
         }
-      });
-    });
+      }),
+    };
+    this.doAction('didClickListItem', NSI, [index]);
   }
 
-  didClickListItem(prev_state, new_state) {
-    new_state.items.forEach((c,i) => {
-      if (prev_state.items[i].in_cart !== new_state.items[i].in_cart) {
-        this.dom.list_items[i].classList.toggle('in_cart');
-      }
-    });
+  didClickListItem(index) {
+    item.classList.toggle('in_cart');
   }
 
 };
@@ -192,19 +183,18 @@ class App extends Vaeri {
 
 * `action_name` is the name of the **Action** function you wish to call.
 * `state_updates` is an object containing any updated properties for your app's `state`. Do not mutate `state` properties directly; use functions like `Array.map()` and `Object.assign()`.
-
-**Action** functions are declared with the `setActions()` function. This function must return an object. Each key must be the name of an **Action** function, and each value must be an **Action** function.
+* `action_parameters` is an array of any parameters you wish to pass to the **Action** function. They will be passed in sequence.
 
 Each **Action** function takes two arguments:
 
 * `prev_state` is your app's state before the **Action** was called.
 * `new_state` is your app's state after the **Action** was called, i.e. the current state.
 
-In the example above, in `onClickListItem()`, the `didClickListItem()` **Action** function is called. The `state` is also updated to that the `state.item` whose corresponding `dom.list_item` was clicked has its `in_cart` (a Boolean value) set to the opposite of what it was. The `didClickListItem()` function then toggles the `in_cart` class on every `dom.list_item` whose corresponding `state.item` had its `in_cart` property changed.
+In the example above, in `onClickListItem()`, the `didClickListItem()` **Action** function is called. The `state` is also updated so that the `state.item` whose corresponding `dom.list_item` was clicked has its `in_cart` (a Boolean value) set to the opposite of what it was. The `didClickListItem()` function then toggles the `in_cart` class on the corresponding `dom.list_item`.
 
-### Defining startup behavior
+### Adding elements
 
-Most apps have some code that should run when the app has finished mounting. In Vaeri, this code is called in `onMount()`:
+Most apps have some DOM elements that need to be created when external data arrives. The `onMount()` function runs when your app first mounts, so it's a good place to retrieve said data:
 
 ```javascript
 class App extends Vaeri {
@@ -227,35 +217,24 @@ class App extends Vaeri {
     });
   }
 
-  setActions() {
-    return ({
-      didReceiveData: this.didReceiveData,
-      didClickListItem: this.didClickListItem,
-    });
-  }
-
-  onMount() {
+  async onMount() {
     // xhr() is an imaginary function to retrieve shopping list items from an API.
-    xhr('/shopping_list_items', 'get', (result) => {
-      this.doAction('didReceiveData', {
-        items: result,
-      });
+    this.doAction('didReceiveData', {
+      items: await xhr('/shopping_list_items', 'get'),
     });
   }
 
-  didReceiveData(prev_state, new_state) {
+  didReceiveData() {
     let new_list_items = '';
     new_state.items.forEach((c,i) => {
-      new_list_items += '<li>';
-      new_list_items += c.name;
-      new_list_items += '</li>';
+      new_list_items += this.makeListItem(c);
     });
     this.dom.list.insertAdjacentHTML('beforeEnd', new_list_items);
     this.dom.list_items.populate();
   }
 
   onClickListItem(item, index) {
-    this.doAction('didClickListItem', {
+    const NSI = {
       items: this.state.items.map((c,i) => {
         if (i === index) {
           return Object.assign({}, c, {
@@ -265,16 +244,21 @@ class App extends Vaeri {
         else {
           return c;
         }
-      });
-    });
+      }),
+    };
+    this.doAction('didClickListItem', NSI, [index]);
   }
 
-  didClickListItem(prev_state, new_state) {
-    new_state.items.forEach((c,i) => {
-      if (prev_state.items[i].in_cart !== new_state.items[i].in_cart) {
-        this.dom.list_items[i].classList.toggle('in_cart');
-      }
-    });
+  didClickListItem(index) {
+    this.dom.list_items[index].classList.toggle('in_cart');
+  }
+
+  makeListItem(c) {
+    let html = '';
+    html += '<li>';
+    html += c.name;
+    html += '</li>';
+    return html;
   }
 
 };
@@ -282,6 +266,6 @@ class App extends Vaeri {
 (new App()).start();
 ```
 
-Any XHR calls that get data from an API should go in `onMount()`.
+**Maker** functions are usually used to generate DOM elements. They can take any parameters, and usually return the HTML for a single item in a DOM element `Array`.
 
-In the example above, an API call is made with an imaginary `xhr()` function to an imaginary endpoint. Upon receiving a `result`, the `didReceiveData()` **Action** function is called, which assembles the HTML for the items and inserts it in the DOM. Upon insertion of the new DOM elements, `populate()` is called on `dom.list_items`, to tell Vaeri that this DOM element `Array` now has new members.
+In the example above, an API call is made with an imaginary `xhr()` function to an imaginary endpoint. Upon receiving a `result`, the `didReceiveData()` **Action** function is called. This function assembles the HTML for the items with the `makeListItem()` **Maker** function and inserts it in the DOM. Upon insertion of the new DOM elements, `populate()` is called on `dom.list_items`, to tell Vaeri that this DOM element `Array` now has new members.
