@@ -2,6 +2,7 @@ class Vaeri {
   constructor() {
     this.state = {};
     this.dom = {};
+    this.start();
   }
 
   start() {
@@ -75,15 +76,17 @@ function VaeriElementArray(self, key, selector, elements) {
   };
 
   this.populate = () => {
-    this.length = 0;
+    let cur_length = this.length;
     document.querySelectorAll(this.selector).forEach((c,i) => {
-      this.push(c);
-      if (this.listeners) {
-        this.bound_listeners[i] = [];
-        this.listeners.forEach((l,j) => {
-          this.bound_listeners[i][j] = l[1].bind(self,c,i);
-          c.addEventListener(l[0], this.bound_listeners[i][j]);
-        });
+      if (i >= cur_length) {
+        this.push(c);
+        if (this.listeners) {
+          this.bound_listeners[i] = [];
+          this.listeners.forEach((l,j) => {
+            this.bound_listeners[i][j] = l[1].bind(self,c,i);
+            c.addEventListener(l[0], this.bound_listeners[i][j]);
+          });
+        }
       }
     });
   };
