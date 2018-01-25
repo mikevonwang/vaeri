@@ -28,14 +28,18 @@ class Vaeri {
           if (this.dom[c]) {
             if (this.dom[c].length === undefined) {
               listeners[c].forEach((l) => {
-                this.dom[c].addEventListener(l[0], l[1].bind(this,this.dom[c],undefined));
+                this.dom[c].addEventListener(l[0], (e) => {
+                  l[1].call(this, e, this.dom[c], undefined);
+                });
               });
             }
             else {
               this.dom[c].listen(listeners[c]);
               this.dom[c].forEach((d,i) => {
                 listeners[c].forEach((l) => {
-                  d.addEventListener(l[0], l[1].bind(this,d,i));
+                  d.addEventListener(l[0], (e) => {
+                    l[1].call(this, e, d, i)
+                  });
                 });
               });
             }
@@ -83,7 +87,9 @@ function VaeriElementArray(self, key, selector, elements) {
         if (this.listeners) {
           this.bound_listeners[i] = [];
           this.listeners.forEach((l,j) => {
-            this.bound_listeners[i][j] = l[1].bind(self,c,i);
+            this.bound_listeners[i][j] = (e) => {
+              l[1].call(self, e, c, i);
+            };
             c.addEventListener(l[0], this.bound_listeners[i][j]);
           });
         }
@@ -106,7 +112,9 @@ function VaeriElementArray(self, key, selector, elements) {
     this.forEach((c,i) => {
       if (this.listeners) {
         this.listeners.forEach((l,j) => {
-          this.bound_listeners[i][j] = l[1].bind(self,c,i);
+          this.bound_listeners[i][j] = (e) => {
+            l[1].call(self, e, c, i);
+          };
           c.addEventListener(l[0], this.bound_listeners[i][j]);
         });
       }
