@@ -55,7 +55,7 @@ class Vaeri {
             c[key].listen(listeners);
           });
         }
-        else {
+        else if (parent[key]) {
           parent[key].listen(listeners);
         }
       }
@@ -94,17 +94,34 @@ function VaeriElement(self, context, selector, vaeri_ref) {
   this.classList = this.vaeri_ref.classList;
   this.getAttribute = this.vaeri_ref.getAttribute;
   this.setAttribute = this.vaeri_ref.setAttribute;
+  this.insertAdjacentHTML = this.vaeri_ref.insertAdjacentHTML.bind(this.vaeri_ref);
 }
 
 function VaeriElementArray(self, context, selector) {
   const elements = context.querySelectorAll(selector);
   elements.forEach((c) => {
-    this.push(new VaeriElement(self, null, selector, c));
+    if (c.getAttribute('vaeri-template') === null) {
+      this.push(new VaeriElement(self, null, selector, c));
+    }
+    else {
+      this.template = c;
+      this.parent = c.parentNode;
+      c.remove();
+    }
   });
 
   this.listen = function(listeners) {
     this.forEach((c, i) => {
       c.listen(listeners, i);
+    });
+  };
+
+  this.populate = function(data, maker) {
+    data.forEach((c,i) => {
+      let new_node = this.template.cloneNode(true);
+      this.parent.appendChild(new_node);
+      this.push(new VaeriElement(self, null, selector, new_node));
+      maker.call(self, c, i);
     });
   };
 }
