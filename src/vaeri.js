@@ -9,17 +9,7 @@ class Vaeri {
     document.addEventListener('DOMContentLoaded', () => {
 
       if (this.getDOM) {
-        const user_dom = this.getDOM();
-        const mapped_dom = {};
-        Object.keys(user_dom).forEach((c) => {
-          if (typeof user_dom[c] === 'string') {
-            mapped_dom[c] = document.querySelector(user_dom[c]);
-          }
-          else {
-            mapped_dom[c] = new VaeriElementArray(this, c, user_dom[c], document.querySelectorAll(user_dom[c]));
-          }
-        });
-        this.dom = mapped_dom;
+        this.dom = this.processDOM(this.getDOM(), document);
       }
 
       if (this.setListeners) {
@@ -54,6 +44,34 @@ class Vaeri {
     });
   }
 
+  processDOM(element_list, parent) {
+    let dom = {};
+    Object.keys(element_list).forEach((key) => {
+      const context = (parent.vaeri_ref) ? parent.vaeri_ref : document;
+      const selector = element_list[key][0];
+      const children = element_list[key][1];
+
+      if (typeof selector === 'string') {
+        const selector_full = ((parent.vaeri_selector) ? (parent.vaeri_selector + ' ') : '') + selector;
+        dom[key] = new VaeriElement(this, context, selector_full);
+        if (children) {
+          Object.assign(dom[key], this.processDOM(children, dom[key]));
+        }
+      }
+      else {
+        const selector_full = ((parent.vaeri_selector) ? (parent.vaeri_selector + ' ') : '') + selector[0];
+        dom[key] = new VaeriElementArray(this, context, selector_full);
+        if (children) {
+          dom[key].forEach((c) => {
+            Object.assign(c, this.processDOM(children, c));
+          });
+        }
+      }
+
+    });
+    return dom;
+  }
+
   doAction(action_name, state_updates, action_parameters = []) {
     this.state = Object.assign({}, this.state, state_updates);
     if (this[action_name]) {
@@ -63,62 +81,25 @@ class Vaeri {
 
 }
 
-function VaeriElementArray(self, key, selector, elements) {
+function VaeriElement(self, context, selector, vaeri_ref) {
+  if (vaeri_ref) {
+    this.vaeri_ref = vaeri_ref;
+  }
+  else {
+    this.vaeri_ref = context.querySelector(selector);
+  }
+  this.vaeri_selector = selector;
+
+  this.addEventListener = this.vaeri_ref.addEventListener;
+  this.classList = this.vaeri_ref.classList;
+  this.getAttribute = this.vaeri_ref.getAttribute;
+  this.setAttribute = this.vaeri_ref.setAttribute;
+}
+
+function VaeriElementArray(self, context, selector) {
+  const elements = context.querySelectorAll(selector);
   elements.forEach((c) => {
-    this.push(c);
+    this.push(new VaeriElement(self, null, selector, c));
   });
-  this.key = key;
-  this.selector = selector;
-  this.listeners = null;
-  this.bound_listeners = null;
-
-  this.listen = (x) => {
-    this.listeners = x;
-    this.bound_listeners = this.listeners.map((c) => {
-      return ([]);
-    });
-  };
-
-  this.populate = () => {
-    let cur_length = this.length;
-    document.querySelectorAll(this.selector).forEach((c,i) => {
-      if (i >= cur_length) {
-        this.push(c);
-        if (this.listeners) {
-          this.bound_listeners[i] = [];
-          this.listeners.forEach((l,j) => {
-            this.bound_listeners[i][j] = (e) => {
-              l[1].call(self, e, c, i);
-            };
-            c.addEventListener(l[0], this.bound_listeners[i][j]);
-          });
-        }
-      }
-    });
-  };
-
-  this.delete = (deleting_index) => {
-    this.forEach((c,i) => {
-      if (this.listeners) {
-        this.listeners.forEach((l,j) => {
-          c.removeEventListener(l[0], this.bound_listeners[i][j]);
-        });
-      }
-    });
-    this.splice(deleting_index, 1);
-    if (this.listeners) {
-      this.bound_listeners.splice(deleting_index, 1);
-    }
-    this.forEach((c,i) => {
-      if (this.listeners) {
-        this.listeners.forEach((l,j) => {
-          this.bound_listeners[i][j] = (e) => {
-            l[1].call(self, e, c, i);
-          };
-          c.addEventListener(l[0], this.bound_listeners[i][j]);
-        });
-      }
-    });
-  };
 }
 VaeriElementArray.prototype = Array.prototype;
