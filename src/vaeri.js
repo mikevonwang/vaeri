@@ -7,40 +7,15 @@ class Vaeri {
 
   start() {
     document.addEventListener('DOMContentLoaded', () => {
-
       if (this.getDOM) {
         this.dom = this.processDOM(this.getDOM(), document);
       }
-
       if (this.setListeners) {
-        const listeners = this.setListeners();
-        Object.keys(listeners).forEach((c) => {
-          if (this.dom[c]) {
-            if (this.dom[c].length === undefined) {
-              listeners[c].forEach((l) => {
-                this.dom[c].addEventListener(l[0], (e) => {
-                  l[1].call(this, e, this.dom[c], undefined);
-                });
-              });
-            }
-            else {
-              this.dom[c].listen(listeners[c]);
-              this.dom[c].forEach((d,i) => {
-                listeners[c].forEach((l) => {
-                  d.addEventListener(l[0], (e) => {
-                    l[1].call(this, e, d, i)
-                  });
-                });
-              });
-            }
-          }
-        });
+        this.processListeners(this.setListeners(), this.dom);
       }
-
       if (this.onMount) {
         this.onMount();
       }
-
     });
   }
 
@@ -50,7 +25,6 @@ class Vaeri {
       const context = (parent.vaeri_ref) ? parent.vaeri_ref : document;
       const selector = element_list[key][0];
       const children = element_list[key][1];
-
       if (typeof selector === 'string') {
         const selector_full = ((parent.vaeri_selector) ? (parent.vaeri_selector + ' ') : '') + selector;
         dom[key] = new VaeriElement(this, context, selector_full);
@@ -67,9 +41,28 @@ class Vaeri {
           });
         }
       }
-
     });
     return dom;
+  }
+
+  processListeners(listener_list, parent) {
+    Object.keys(listener_list).forEach((key) => {
+      const listeners = listener_list[key][0];
+      const children = listener_list[key][1];
+      if (listeners !== null && listeners.length > 0) {
+        if (parent.length > 0) {
+          parent.forEach((c) => {
+            c[key].listen(listeners);
+          });
+        }
+        else {
+          parent[key].listen(listeners);
+        }
+      }
+      if (children) {
+        this.processListeners(children, parent[key]);
+      }
+    });
   }
 
   doAction(action_name, state_updates, action_parameters = []) {
@@ -90,7 +83,14 @@ function VaeriElement(self, context, selector, vaeri_ref) {
   }
   this.vaeri_selector = selector;
 
-  this.addEventListener = this.vaeri_ref.addEventListener;
+  this.listen = function(listeners, i) {
+    listeners.forEach((l) => {
+      this.vaeri_ref.addEventListener(l[0], (e) => {
+        l[1].call(self, e, i);
+      });
+    });
+  };
+
   this.classList = this.vaeri_ref.classList;
   this.getAttribute = this.vaeri_ref.getAttribute;
   this.setAttribute = this.vaeri_ref.setAttribute;
@@ -101,5 +101,11 @@ function VaeriElementArray(self, context, selector) {
   elements.forEach((c) => {
     this.push(new VaeriElement(self, null, selector, c));
   });
+
+  this.listen = function(listeners) {
+    this.forEach((c, i) => {
+      c.listen(listeners, i);
+    });
+  };
 }
 VaeriElementArray.prototype = Array.prototype;
