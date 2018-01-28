@@ -86,7 +86,7 @@ function VaeriElement(self, context, selector, vaeri_ref) {
   this.listen = function(listeners, i) {
     listeners.forEach((l) => {
       this.vaeri_ref.addEventListener(l[0], (e) => {
-        l[1].call(self, e, i);
+        l[1].call(self, e, this.vaeri_ref, i);
       });
     });
   };
@@ -111,6 +111,7 @@ function VaeriElementArray(self, context, selector) {
   });
 
   this.listen = function(listeners) {
+    this.listeners = listeners;
     this.forEach((c, i) => {
       c.listen(listeners, i);
     });
@@ -118,9 +119,11 @@ function VaeriElementArray(self, context, selector) {
 
   this.populate = function(data, maker) {
     data.forEach((c,i) => {
-      let new_node = this.template.cloneNode(true);
-      this.parent.appendChild(new_node);
-      this.push(new VaeriElement(self, null, selector, new_node));
+      let new_vaeri_ref = this.template.cloneNode(true);
+      let new_vaeri_element = new VaeriElement(self, null, selector, new_vaeri_ref);
+      this.parent.appendChild(new_vaeri_ref);
+      this.push(new_vaeri_element);
+      new_vaeri_element.listen(this.listeners, i);
       maker.call(self, c, i);
     });
   };
