@@ -46,18 +46,18 @@ class Vaeri {
               vaeri_children: Object.keys(children),
             });
           });
-        }
-        if (dom[key].template) {
-          Object.assign(dom[key].template, this.processDOM(children, dom[key].template, true), {
-            vaeri_children: Object.keys(children),
-          });
+          if (dom[key].template) {
+            Object.assign(dom[key].template, this.processDOM(children, dom[key].template, true), {
+              vaeri_children: Object.keys(children),
+            });
+          }
         }
       }
     });
     return dom;
   }
 
-  processListeners(listener_list, parent) {
+  processListeners(listener_list, parent, is_template) {
     Object.keys(listener_list).forEach((key) => {
       const listeners = listener_list[key][0];
       const children = listener_list[key][1];
@@ -69,10 +69,16 @@ class Vaeri {
         }
         else if (parent[key]) {
           parent[key].listen(listeners);
+          if (is_template) {
+            parent[key].listeners = listeners;
+          }
         }
       }
       if (children) {
         this.processListeners(children, parent[key]);
+        if (parent[key].template) {
+          this.processListeners(children, parent[key].template, true);
+        }
       }
     });
   }
@@ -142,23 +148,25 @@ function VaeriElementArray(self, context, selector) {
       data = [data];
     }
     data.forEach((c) => {
-      let new_vaeri_element = this.clone(this.template);
+      const i = this.length;
+      let new_vaeri_element = this.clone(this.template,i);
+      new_vaeri_element.listen(this.listeners, i);
       this.parent.appendChild(new_vaeri_element.vaeri_ref);
       this.push(new_vaeri_element);
-
-      const i = this.length - 1;
-      new_vaeri_element.listen(this.listeners, i);
       maker.call(self, c, i);
     });
   };
 
-  this.clone = function(source) {
+  this.clone = function(source, index) {
     let target = new VaeriElement(self, null, source.vaeri_selector, source.vaeri_ref.cloneNode(true));
     if (source.vaeri_children) {
       source.vaeri_children.forEach((child_key) => {
-        target[child_key] = this.clone(source[child_key]);
+        target[child_key] = this.clone(source[child_key], index);
         target.vaeri_ref.appendChild(target[child_key].vaeri_ref);
       });
+    }
+    if (source.listeners) {
+      target.listen(source.listeners, index);
     }
     return target;
   };
