@@ -108,9 +108,10 @@ class VaeriElement {
     }
   }
 
-  listen(listeners, i) {
+  listen(listeners, link) {
     listeners.forEach((l) => {
       this.vaeri_ref.addEventListener(l[0], (e) => {
+        let i = (link !== undefined) ? link() : link;
         l[1].call(this.vaeri_self, e, this.vaeri_ref, i);
       });
     });
@@ -125,9 +126,11 @@ class VaeriElement {
 }
 
 function VaeriElementArray(self, context, selector) {
+  this.links = [];
   const elements = context.querySelectorAll(selector);
   elements.forEach((c) => {
     if (c.getAttribute('vaeri-template') === null) {
+      this.links.push(this.length);
       this.push(new VaeriElement(self, null, selector, c));
     }
     else {
@@ -139,7 +142,7 @@ function VaeriElementArray(self, context, selector) {
   this.listen = function(listeners) {
     this.listeners = listeners;
     this.forEach((c, i) => {
-      c.listen(listeners, i);
+      c.listen(listeners, this.link.bind(this, i));
     });
   };
 
@@ -149,8 +152,9 @@ function VaeriElementArray(self, context, selector) {
     }
     data.forEach((c) => {
       const i = this.length;
+      this.links.push(i);
       let new_vaeri_element = this.clone(this.template,i);
-      new_vaeri_element.listen(this.listeners, i);
+      new_vaeri_element.listen(this.listeners, this.link.bind(this, i));
       this.parent.appendChild(new_vaeri_element.vaeri_ref);
       this.push(new_vaeri_element);
       maker.call(self, c, i);
@@ -166,9 +170,26 @@ function VaeriElementArray(self, context, selector) {
       });
     }
     if (source.listeners) {
-      target.listen(source.listeners, index);
+      target.listen(source.listeners, this.link.bind(this, index));
     }
     return target;
+  };
+
+  this.remove = function(index) {
+    this[index].vaeri_ref.remove();
+    this.splice(index, 1);
+    this.links.forEach((c,i) => {
+      if (c === index) {
+        this.links[i] = null;
+      }
+      else if (c > index) {
+        this.links[i] -= 1;
+      }
+    });
+  };
+
+  this.link = function(index) {
+    return this.links[index];
   };
 }
 VaeriElementArray.prototype = Array.prototype;
