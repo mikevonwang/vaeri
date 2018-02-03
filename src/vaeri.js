@@ -9,6 +9,9 @@ class Vaeri {
     document.addEventListener('DOMContentLoaded', () => {
       if (this.getDOM) {
         this.dom = this.processDOM(this.getDOM(), document);
+        document.querySelectorAll('*[vaeri-template=true]').forEach((c) => {
+          c.remove();
+        });
       }
       if (this.setListeners) {
         this.processListeners(this.setListeners(), this.dom);
@@ -19,7 +22,7 @@ class Vaeri {
     });
   }
 
-  processDOM(element_list, parent) {
+  processDOM(element_list, parent, is_template) {
     let dom = {};
     Object.keys(element_list).forEach((key) => {
       const context = (parent.vaeri_ref) ? parent.vaeri_ref : document;
@@ -27,9 +30,11 @@ class Vaeri {
       const children = element_list[key][1];
       if (typeof selector === 'string') {
         const selector_full = ((parent.vaeri_selector) ? (parent.vaeri_selector + ' ') : '') + selector;
-        dom[key] = new VaeriElement(this, context, selector_full);
+        dom[key] = new VaeriElement(this, context, selector_full, null, is_template);
         if (children) {
-          Object.assign(dom[key], this.processDOM(children, dom[key]));
+          Object.assign(dom[key], this.processDOM(children, dom[key]), {
+            vaeri_children: Object.keys(children),
+          });
         }
       }
       else {
@@ -37,7 +42,14 @@ class Vaeri {
         dom[key] = new VaeriElementArray(this, context, selector_full);
         if (children) {
           dom[key].forEach((c) => {
-            Object.assign(c, this.processDOM(children, c));
+            Object.assign(c, this.processDOM(children, c), {
+              vaeri_children: Object.keys(children),
+            });
+          });
+        }
+        if (dom[key].template) {
+          Object.assign(dom[key].template, this.processDOM(children, dom[key].template, true), {
+            vaeri_children: Object.keys(children),
           });
         }
       }
@@ -75,7 +87,7 @@ class Vaeri {
 }
 
 class VaeriElement {
-  constructor(self, context, selector, ref) {
+  constructor(self, context, selector, ref, is_template) {
     this.vaeri_self = self;
     this.vaeri_ref = (ref) ? ref : context.querySelector(selector);
     this.vaeri_selector = selector;
@@ -84,6 +96,10 @@ class VaeriElement {
     this.getAttribute = this.vaeri_ref.getAttribute;
     this.setAttribute = this.vaeri_ref.setAttribute;
     this.insertAdjacentHTML = this.vaeri_ref.insertAdjacentHTML.bind(this.vaeri_ref);
+
+    if (is_template) {
+      this.vaeri_ref.remove();
+    }
   }
 
   listen(listeners, i) {
@@ -109,9 +125,8 @@ function VaeriElementArray(self, context, selector) {
       this.push(new VaeriElement(self, null, selector, c));
     }
     else {
-      this.template = c;
+      this.template = new VaeriElement(self, null, selector, c);
       this.parent = c.parentNode;
-      c.remove();
     }
   });
 
@@ -127,15 +142,25 @@ function VaeriElementArray(self, context, selector) {
       data = [data];
     }
     data.forEach((c) => {
-      let new_vaeri_ref = this.template.cloneNode(true);
-      let new_vaeri_element = new VaeriElement(self, null, selector, new_vaeri_ref);
-      this.parent.appendChild(new_vaeri_ref);
+      let new_vaeri_element = this.clone(this.template);
+      this.parent.appendChild(new_vaeri_element.vaeri_ref);
       this.push(new_vaeri_element);
-      
+
       const i = this.length - 1;
       new_vaeri_element.listen(this.listeners, i);
       maker.call(self, c, i);
     });
+  };
+
+  this.clone = function(source) {
+    let target = new VaeriElement(self, null, source.vaeri_selector, source.vaeri_ref.cloneNode(true));
+    if (source.vaeri_children) {
+      source.vaeri_children.forEach((child_key) => {
+        target[child_key] = this.clone(source[child_key]);
+        target.vaeri_ref.appendChild(target[child_key].vaeri_ref);
+      });
+    }
+    return target;
   };
 }
 VaeriElementArray.prototype = Array.prototype;
