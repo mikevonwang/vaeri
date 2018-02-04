@@ -109,12 +109,14 @@ class VaeriElement {
   }
 
   listen(listeners, link) {
-    listeners.forEach((l) => {
-      this.vaeri_ref.addEventListener(l[0], (e) => {
-        let i = (link !== undefined) ? link() : link;
-        l[1].call(this.vaeri_self, e, this.vaeri_ref, i);
+    if (listeners) {
+      listeners.forEach((l) => {
+        this.vaeri_ref.addEventListener(l[0], (e) => {
+          let i = (link !== undefined) ? link() : link;
+          l[1].call(this.vaeri_self, e, this.vaeri_ref, i);
+        });
       });
-    });
+    }
   }
 
   get value() {
@@ -157,7 +159,9 @@ function VaeriElementArray(self, context, selector) {
       new_vaeri_element.listen(this.listeners, this.link.bind(this, i));
       this.parent.appendChild(new_vaeri_element.vaeri_ref);
       this.push(new_vaeri_element);
-      maker.call(self, c, i);
+      if (maker) {
+        maker.call(self, c, i);
+      }
     });
   };
 
