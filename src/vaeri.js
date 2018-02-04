@@ -99,8 +99,8 @@ class VaeriElement {
     this.vaeri_selector = selector;
 
     this.classList = this.vaeri_ref.classList;
-    this.getAttribute = this.vaeri_ref.getAttribute;
-    this.setAttribute = this.vaeri_ref.setAttribute;
+    this.getAttribute = this.vaeri_ref.getAttribute.bind(this.vaeri_ref);
+    this.setAttribute = this.vaeri_ref.setAttribute.bind(this.vaeri_ref);
     this.insertAdjacentHTML = this.vaeri_ref.insertAdjacentHTML.bind(this.vaeri_ref);
 
     if (is_template) {
