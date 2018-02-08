@@ -31,7 +31,7 @@ class Vaeri {
       if (typeof selector === 'string') {
         const selector_full = ((parent.vaeri_selector) ? (parent.vaeri_selector + ' ') : '') + selector;
         dom[key] = new VaeriElement(this, context, selector_full, null, is_template);
-        if (children) {
+        if (dom[key].vaeri_ref && children) {
           Object.assign(dom[key], this.processDOM(children, dom[key]), {
             vaeri_children: Object.keys(children),
           });
@@ -40,7 +40,7 @@ class Vaeri {
       else {
         const selector_full = ((parent.vaeri_selector) ? (parent.vaeri_selector + ' ') : '') + selector[0];
         dom[key] = new VaeriElementArray(this, context, selector_full);
-        if (children) {
+        if (dom[key].length > 0 && children) {
           dom[key].forEach((c) => {
             Object.assign(c, this.processDOM(children, c), {
               vaeri_children: Object.keys(children),
@@ -74,7 +74,7 @@ class Vaeri {
           }
         }
       }
-      if (children) {
+      if (children && parent[key]) {
         this.processListeners(children, parent[key]);
         if (parent[key].template) {
           this.processListeners(children, parent[key].template, true);
@@ -98,13 +98,15 @@ class VaeriElement {
     this.vaeri_ref = (ref) ? ref : context.querySelector(selector);
     this.vaeri_selector = selector;
 
-    this.classList = this.vaeri_ref.classList;
-    this.getAttribute = this.vaeri_ref.getAttribute.bind(this.vaeri_ref);
-    this.setAttribute = this.vaeri_ref.setAttribute.bind(this.vaeri_ref);
-    this.insertAdjacentHTML = this.vaeri_ref.insertAdjacentHTML.bind(this.vaeri_ref);
+    if (this.vaeri_ref) {
+      this.classList = this.vaeri_ref.classList;
+      this.getAttribute = this.vaeri_ref.getAttribute.bind(this.vaeri_ref);
+      this.setAttribute = this.vaeri_ref.setAttribute.bind(this.vaeri_ref);
+      this.insertAdjacentHTML = this.vaeri_ref.insertAdjacentHTML.bind(this.vaeri_ref);
 
-    if (is_template) {
-      this.vaeri_ref.remove();
+      if (is_template) {
+        this.vaeri_ref.remove();
+      }
     }
   }
 
